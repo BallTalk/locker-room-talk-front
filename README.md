@@ -9,8 +9,7 @@ Spring Boot 백엔드와의 REST API 연동,
 
 ---
 
-```plaintext
-<pre> 
+```
 ## 📦 프로젝트 아키텍처
 
 src/
@@ -39,8 +38,7 @@ src/
 │  └─ PrivateRoute.tsx
 └─ .github/workflows/        # CI/CD
    └─ deploy.yml
- ``` </pre>
-
+```
 ---
 
 ## 🛠️ 개발 환경 세팅
