@@ -9,8 +9,8 @@ Spring Boot 백엔드와의 REST API 연동,
 
 ---
 
-```
 ## 📦 프로젝트 아키텍처
+```
 
 src/
 ├─ domains/                  # 도메인 레이어 (비즈니스 로직)
