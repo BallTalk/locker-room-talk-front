@@ -1,26 +1,29 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter } from 'react-router-dom';
+import styled from 'styled-components';
+import AppRoutes from './router/routes';
+import Header from './frameworks/components/layout/Header';
 
-function App() {
+const AppContainer = styled.div`
+  min-height: 100vh;
+  background-color: #fafafa;
+`;
+
+const MainContent = styled.main`
+  padding-top: 80px; // 헤더 높이만큼 여백
+`;
+
+const App: React.FC = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <AppContainer>
+        <Header />
+        <MainContent>
+          <AppRoutes />
+        </MainContent>
+      </AppContainer>
+    </BrowserRouter>
   );
-}
+};
 
 export default App;
