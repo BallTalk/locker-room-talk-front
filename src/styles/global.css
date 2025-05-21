@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background-color: #FAF9F6;
+  color: #333333;
+  line-height: 1.6;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+input, textarea {
+  font-family: inherit;
+  border: none;
+  outline: none;
+}
+
+/* 가죽 질감을 위한 공통 스타일 */
+.leather-effect {
+  background: linear-gradient(45deg, #8B4513, #D2B48C);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(139, 69, 19, 0.1);
+  transition: all 0.3s ease;
+}
+
+.leather-effect:hover {
+  box-shadow: 0 6px 12px rgba(139, 69, 19, 0.15);
+  transform: translateY(-2px);
+}
+
+/* 반응형 디자인을 위한 미디어 쿼리 */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 320px) {
+  html {
+    font-size: 12px;
+  }
+} 
