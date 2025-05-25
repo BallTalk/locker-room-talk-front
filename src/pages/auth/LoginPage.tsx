@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { theme } from '../../styles/theme';
 import { useAuth } from '../../domains/user/useCases/useAuth';
 import { UserRepositoryImpl } from '../../infrastructures/api/UserRepositoryImpl';
@@ -78,16 +78,17 @@ const Links = styled.div`
 `;
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
   const userRepository = new UserRepositoryImpl();
   const { login, loading, error } = useAuth(userRepository);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login({ email, password });
-      // 로그인 성공 후 리다이렉트
+      await login({ loginId, password });
+      navigate('/');
     } catch (err) {
       console.error('Login failed:', err);
     }
@@ -99,10 +100,10 @@ const LoginPage: React.FC = () => {
         <Title>로그인</Title>
         <Form onSubmit={handleSubmit}>
           <Input
-            type="email"
-            placeholder="이메일"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="아이디"
+            value={loginId}
+            onChange={(e) => setLoginId(e.target.value)}
             required
           />
           <Input

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { theme } from '../../styles/theme';
 import { useAuth } from '../../domains/user/useCases/useAuth';
 import { UserRepositoryImpl } from '../../infrastructures/api/UserRepositoryImpl';
@@ -79,11 +79,14 @@ const Links = styled.div`
 
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    username: '',
+    loginId: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    nickname: '',
+    favoriteTeamId: ''
   });
+  const [loginIdError, setLoginIdError] = useState('');
+  const navigate = useNavigate();
   const userRepository = new UserRepositoryImpl();
   const { register, loading, error } = useAuth(userRepository);
 
@@ -95,15 +98,34 @@ const RegisterPage: React.FC = () => {
     }));
   };
 
+  const handleLoginIdBlur = async () => {
+    if (!formData.loginId) return;
+    
+    try {
+      const exists = await userRepository.checkLoginIdExists(formData.loginId);
+      if (exists) {
+        setLoginIdError('이미 사용 중인 아이디입니다.');
+      } else {
+        setLoginIdError('');
+      }
+    } catch (err) {
+      console.error('아이디 중복 확인 실패:', err);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert('비밀번호가 일치하지 않습니다.');
       return;
     }
+    if (loginIdError) {
+      alert('아이디 중복을 확인해주세요.');
+      return;
+    }
     try {
       await register(formData);
-      // 회원가입 성공 후 리다이렉트
+      navigate('/');
     } catch (err) {
       console.error('Registration failed:', err);
     }
@@ -115,18 +137,28 @@ const RegisterPage: React.FC = () => {
         <Title>회원가입</Title>
         <Form onSubmit={handleSubmit}>
           <Input
-            type="email"
-            name="email"
-            placeholder="이메일"
-            value={formData.email}
+            type="text"
+            name="loginId"
+            placeholder="아이디"
+            value={formData.loginId}
+            onChange={handleChange}
+            onBlur={handleLoginIdBlur}
+            required
+          />
+          {loginIdError && <div style={{ color: 'red', fontSize: '0.8rem' }}>{loginIdError}</div>}
+          <Input
+            type="text"
+            name="nickname"
+            placeholder="닉네임"
+            value={formData.nickname}
             onChange={handleChange}
             required
           />
           <Input
             type="text"
-            name="username"
-            placeholder="사용자 이름"
-            value={formData.username}
+            name="favoriteTeamId"
+            placeholder="응원 팀 ID (예: samsung)"
+            value={formData.favoriteTeamId}
             onChange={handleChange}
             required
           />

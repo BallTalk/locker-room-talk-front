@@ -3,9 +3,9 @@ import { User, UserCredentials, UserRegistration } from '../entities/User';
 import { UserRepository } from '../repositories/UserRepository';
 
 export const useAuth = (userRepository: UserRepository) => {
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const login = async (credentials: UserCredentials) => {
     try {
@@ -13,9 +13,8 @@ export const useAuth = (userRepository: UserRepository) => {
       setError(null);
       const loggedInUser = await userRepository.login(credentials);
       setUser(loggedInUser);
-      return loggedInUser;
     } catch (err) {
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
+      setError('로그인에 실패했습니다.');
       throw err;
     } finally {
       setLoading(false);
@@ -26,11 +25,10 @@ export const useAuth = (userRepository: UserRepository) => {
     try {
       setLoading(true);
       setError(null);
-      const newUser = await userRepository.register(userData);
-      setUser(newUser);
-      return newUser;
+      const registeredUser = await userRepository.register(userData);
+      setUser(registeredUser);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
+      setError('회원가입에 실패했습니다.');
       throw err;
     } finally {
       setLoading(false);
@@ -44,7 +42,7 @@ export const useAuth = (userRepository: UserRepository) => {
       await userRepository.logout();
       setUser(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '로그아웃에 실패했습니다.');
+      setError('로그아웃에 실패했습니다.');
       throw err;
     } finally {
       setLoading(false);
@@ -53,16 +51,12 @@ export const useAuth = (userRepository: UserRepository) => {
 
   const checkAuth = async () => {
     try {
-      setLoading(true);
-      setError(null);
       const currentUser = await userRepository.getCurrentUser();
       setUser(currentUser);
       return currentUser;
     } catch (err) {
-      setError(err instanceof Error ? err.message : '인증 확인에 실패했습니다.');
-      throw err;
-    } finally {
-      setLoading(false);
+      setUser(null);
+      return null;
     }
   };
 

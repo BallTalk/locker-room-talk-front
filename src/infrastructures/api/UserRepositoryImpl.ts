@@ -1,82 +1,52 @@
-import { User, UserCredentials, UserRegistration } from '../../domains/user/entities/User';
+import { User, UserCredentials, UserRegistration, LoginResponse } from '../../domains/user/entities/User';
 import { UserRepository } from '../../domains/user/repositories/UserRepository';
+import { api } from './api';
 
 export class UserRepositoryImpl implements UserRepository {
-  private readonly API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-
   async login(credentials: UserCredentials): Promise<User> {
-    const response = await fetch(`${this.API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
-
-    if (!response.ok) {
-      throw new Error('로그인에 실패했습니다.');
+    const response = await api.post<LoginResponse>('/api/user/login', credentials);
+    const { token, tokenType, expiresAt } = response.data;
+    
+    // 토큰을 로컬 스토리지에 저장
+    localStorage.setItem('token', token);
+    localStorage.setItem('tokenType', tokenType);
+    localStorage.setItem('tokenExpiresAt', expiresAt.toString());
+    
+    // 현재 사용자 정보 조회
+    const user = await this.getCurrentUser();
+    if (!user) {
+      throw new Error('로그인 후 사용자 정보를 가져오는데 실패했습니다.');
     }
-
-    return response.json();
+    return user;
   }
 
   async register(userData: UserRegistration): Promise<User> {
-    const response = await fetch(`${this.API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(userData),
-    });
-
-    if (!response.ok) {
-      throw new Error('회원가입에 실패했습니다.');
-    }
-
-    return response.json();
+    await api.post('/api/user', userData);
+    return this.login({ loginId: userData.loginId, password: userData.password });
   }
 
   async logout(): Promise<void> {
-    const response = await fetch(`${this.API_URL}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      throw new Error('로그아웃에 실패했습니다.');
-    }
+    localStorage.removeItem('token');
+    localStorage.removeItem('tokenType');
+    localStorage.removeItem('tokenExpiresAt');
   }
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await fetch(`${this.API_URL}/api/auth/me`, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        return null;
-      }
-
-      return response.json();
+      const response = await api.get<User>('/api/user/me');
+      return response.data;
     } catch (error) {
       return null;
     }
   }
 
   async updateProfile(userId: number, data: Partial<User>): Promise<User> {
-    const response = await fetch(`${this.API_URL}/api/users/${userId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
+    const response = await api.patch<User>(`/api/user/${userId}`, data);
+    return response.data;
+  }
 
-    if (!response.ok) {
-      throw new Error('프로필 업데이트에 실패했습니다.');
-    }
-
-    return response.json();
+  async checkLoginIdExists(loginId: string): Promise<boolean> {
+    const response = await api.get<boolean>(`/api/user/exists?loginId=${loginId}`);
+    return response.data;
   }
 } 
