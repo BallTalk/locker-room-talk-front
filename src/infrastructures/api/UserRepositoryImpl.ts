@@ -4,7 +4,7 @@ import { api } from './api';
 
 export class UserRepositoryImpl implements UserRepository {
   async login(credentials: UserCredentials): Promise<User> {
-    const response = await api.post<LoginResponse>('/api/user/login', credentials);
+    const response = await api.post<LoginResponse>('/user/login', credentials);
     const { token, tokenType, expiresAt } = response.data;
     
     // 토큰을 로컬 스토리지에 저장
@@ -21,7 +21,7 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async register(userData: UserRegistration): Promise<User> {
-    await api.post('/api/user', userData);
+    await api.post('/user', userData);
     return this.login({ loginId: userData.loginId, password: userData.password });
   }
 
@@ -33,7 +33,7 @@ export class UserRepositoryImpl implements UserRepository {
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await api.get<User>('/api/user/me');
+      const response = await api.get<User>('/user/me');
       return response.data;
     } catch (error) {
       return null;
@@ -41,12 +41,12 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async updateProfile(userId: number, data: Partial<User>): Promise<User> {
-    const response = await api.patch<User>(`/api/user/${userId}`, data);
+    const response = await api.patch<User>(`/user/${userId}`, data);
     return response.data;
   }
 
   async checkLoginIdExists(loginId: string): Promise<boolean> {
-    const response = await api.get<boolean>(`/api/user/exists?loginId=${loginId}`);
+    const response = await api.get<boolean>(`/user/exists?loginId=${loginId}`);
     return response.data;
   }
 } 

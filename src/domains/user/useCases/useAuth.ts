@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { User, UserCredentials, UserRegistration } from '../entities/User';
 import { UserRepository } from '../repositories/UserRepository';
+import { ValidationError } from '../../../infrastructures/api/error';
 
 export const useAuth = (userRepository: UserRepository) => {
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,11 @@ export const useAuth = (userRepository: UserRepository) => {
       const loggedInUser = await userRepository.login(credentials);
       setUser(loggedInUser);
     } catch (err) {
-      setError('로그인에 실패했습니다.');
+      if (err instanceof ValidationError) {
+        setError(Object.values(err.fieldErrors)[0] || '로그인에 실패했습니다.');
+      } else {
+        setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
+      }
       throw err;
     } finally {
       setLoading(false);
@@ -28,7 +33,11 @@ export const useAuth = (userRepository: UserRepository) => {
       const registeredUser = await userRepository.register(userData);
       setUser(registeredUser);
     } catch (err) {
-      setError('회원가입에 실패했습니다.');
+      if (err instanceof ValidationError) {
+        setError(Object.values(err.fieldErrors)[0] || '회원가입에 실패했습니다.');
+      } else {
+        setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
+      }
       throw err;
     } finally {
       setLoading(false);
@@ -42,7 +51,11 @@ export const useAuth = (userRepository: UserRepository) => {
       await userRepository.logout();
       setUser(null);
     } catch (err) {
-      setError('로그아웃에 실패했습니다.');
+      if (err instanceof ValidationError) {
+        setError(Object.values(err.fieldErrors)[0] || '로그아웃에 실패했습니다.');
+      } else {
+        setError(err instanceof Error ? err.message : '로그아웃에 실패했습니다.');
+      }
       throw err;
     } finally {
       setLoading(false);
