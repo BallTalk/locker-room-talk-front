@@ -15,6 +15,7 @@ jobs:
         with:
           node-version: '20'
       - run: npm install
+      - run: ls node_modules/react-router-dom
       - run: npm test  # 테스트만 실행
 
   deploy:
