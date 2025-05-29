@@ -14,8 +14,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - run: rm -rf node_modules
       - run: npm install
       - run: ls node_modules/react-router-dom
+      - run: pwd
+      - run: ls -al
       - run: npm test  # 테스트만 실행
 
   deploy:
