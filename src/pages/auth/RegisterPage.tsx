@@ -77,6 +77,12 @@ const Links = styled.div`
   }
 `;
 
+const ValidationMessage = styled.div<{ isValid?: boolean }>`
+  font-size: 0.8rem;
+  margin-top: 4px;
+  color: ${props => props.isValid ? theme.colors.success : theme.colors.error};
+`;
+
 const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
     loginId: '',
@@ -85,10 +91,68 @@ const RegisterPage: React.FC = () => {
     nickname: '',
     favoriteTeamId: ''
   });
-  const [loginIdError, setLoginIdError] = useState('');
+
+  const [validation, setValidation] = useState({
+    loginId: { isValid: false, message: '' },
+    password: { isValid: false, message: '' },
+    confirmPassword: { isValid: false, message: '' },
+    nickname: { isValid: false, message: '' },
+    favoriteTeamId: { isValid: false, message: '' }
+  });
+
   const navigate = useNavigate();
   const userRepository = new UserRepositoryImpl();
   const { register, loading, error } = useAuth(userRepository);
+
+  const validateLoginId = (value: string) => {
+    if (!value) {
+      return { isValid: false, message: '로그인 아이디는 필수입니다.' };
+    }
+    if (value.length < 5 || value.length > 20) {
+      return { isValid: false, message: '로그인 아이디는 5~20자여야 합니다.' };
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(value)) {
+      return { isValid: false, message: '로그인 아이디는 영문 대·소문자와 숫자 조합만 허용됩니다.' };
+    }
+    return { isValid: true, message: '사용 가능한 아이디입니다.' };
+  };
+
+  const validatePassword = (value: string) => {
+    if (!value) {
+      return { isValid: false, message: '비밀번호는 필수입니다.' };
+    }
+    if (value.length < 8 || value.length > 72) {
+      return { isValid: false, message: '비밀번호는 8자 이상 72자 이하여야 합니다.' };
+    }
+    return { isValid: true, message: '사용 가능한 비밀번호입니다.' };
+  };
+
+  const validateConfirmPassword = (value: string, password: string) => {
+    if (!value) {
+      return { isValid: false, message: '비밀번호 확인은 필수입니다.' };
+    }
+    if (value !== password) {
+      return { isValid: false, message: '비밀번호가 일치하지 않습니다.' };
+    }
+    return { isValid: true, message: '비밀번호가 일치합니다.' };
+  };
+
+  const validateNickname = (value: string) => {
+    if (!value) {
+      return { isValid: false, message: '닉네임은 필수입니다.' };
+    }
+    if (value.length < 5 || value.length > 20) {
+      return { isValid: false, message: '닉네임은 5~20자여야 합니다.' };
+    }
+    return { isValid: true, message: '사용 가능한 닉네임입니다.' };
+  };
+
+  const validateFavoriteTeamId = (value: string) => {
+    if (!value) {
+      return { isValid: false, message: '응원 팀 ID는 필수입니다.' };
+    }
+    return { isValid: true, message: '유효한 팀 ID입니다.' };
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -96,6 +160,41 @@ const RegisterPage: React.FC = () => {
       ...prev,
       [name]: value
     }));
+
+    // 각 필드별 유효성 검사
+    switch (name) {
+      case 'loginId':
+        setValidation(prev => ({
+          ...prev,
+          loginId: validateLoginId(value)
+        }));
+        break;
+      case 'password':
+        setValidation(prev => ({
+          ...prev,
+          password: validatePassword(value),
+          confirmPassword: validateConfirmPassword(formData.confirmPassword, value)
+        }));
+        break;
+      case 'confirmPassword':
+        setValidation(prev => ({
+          ...prev,
+          confirmPassword: validateConfirmPassword(value, formData.password)
+        }));
+        break;
+      case 'nickname':
+        setValidation(prev => ({
+          ...prev,
+          nickname: validateNickname(value)
+        }));
+        break;
+      case 'favoriteTeamId':
+        setValidation(prev => ({
+          ...prev,
+          favoriteTeamId: validateFavoriteTeamId(value)
+        }));
+        break;
+    }
   };
 
   const handleLoginIdBlur = async () => {
@@ -104,9 +203,15 @@ const RegisterPage: React.FC = () => {
     try {
       const exists = await userRepository.checkLoginIdExists(formData.loginId);
       if (exists) {
-        setLoginIdError('이미 사용 중인 아이디입니다.');
+        setValidation(prev => ({
+          ...prev,
+          loginId: { isValid: false, message: '중복된 로그인 아이디입니다.' }
+        }));
       } else {
-        setLoginIdError('');
+        setValidation(prev => ({
+          ...prev,
+          loginId: { isValid: true, message: '사용 가능한 아이디입니다.' }
+        }));
       }
     } catch (err) {
       console.error('아이디 중복 확인 실패:', err);
@@ -115,14 +220,15 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
+    
+    // 모든 필드의 유효성 검사
+    const isFormValid = Object.values(validation).every(v => v.isValid);
+    
+    if (!isFormValid) {
+      alert('모든 필드를 올바르게 입력해주세요.');
       return;
     }
-    if (loginIdError) {
-      alert('아이디 중복을 확인해주세요.');
-      return;
-    }
+
     try {
       await register(formData);
       navigate('/');
@@ -145,7 +251,10 @@ const RegisterPage: React.FC = () => {
             onBlur={handleLoginIdBlur}
             required
           />
-          {loginIdError && <div style={{ color: 'red', fontSize: '0.8rem' }}>{loginIdError}</div>}
+          <ValidationMessage isValid={validation.loginId.isValid}>
+            {validation.loginId.message}
+          </ValidationMessage>
+
           <Input
             type="text"
             name="nickname"
@@ -154,6 +263,10 @@ const RegisterPage: React.FC = () => {
             onChange={handleChange}
             required
           />
+          <ValidationMessage isValid={validation.nickname.isValid}>
+            {validation.nickname.message}
+          </ValidationMessage>
+
           <Input
             type="text"
             name="favoriteTeamId"
@@ -162,6 +275,10 @@ const RegisterPage: React.FC = () => {
             onChange={handleChange}
             required
           />
+          <ValidationMessage isValid={validation.favoriteTeamId.isValid}>
+            {validation.favoriteTeamId.message}
+          </ValidationMessage>
+
           <Input
             type="password"
             name="password"
@@ -170,6 +287,10 @@ const RegisterPage: React.FC = () => {
             onChange={handleChange}
             required
           />
+          <ValidationMessage isValid={validation.password.isValid}>
+            {validation.password.message}
+          </ValidationMessage>
+
           <Input
             type="password"
             name="confirmPassword"
@@ -178,6 +299,10 @@ const RegisterPage: React.FC = () => {
             onChange={handleChange}
             required
           />
+          <ValidationMessage isValid={validation.confirmPassword.isValid}>
+            {validation.confirmPassword.message}
+          </ValidationMessage>
+
           <Button type="submit" disabled={loading}>
             {loading ? '가입 중...' : '회원가입'}
           </Button>

@@ -11,7 +11,9 @@ export const theme = {
     accent: {
       pink: '#FFB6C1', // 여성스러운 핑크
       gold: '#D4AF37' // 고급스러운 골드
-    }
+    },
+    success: '#28a745', // 성공 메시지 색상
+    error: '#dc3545' // 에러 메시지 색상
   },
   shadows: {
     leather: '0 4px 6px rgba(139, 69, 19, 0.1)',
