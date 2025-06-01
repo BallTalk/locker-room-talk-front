@@ -63,6 +63,52 @@ const Button = styled.button`
   }
 `;
 
+const SocialLoginContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: ${theme.spacing.md};
+  margin-top: ${theme.spacing.lg};
+`;
+
+const SocialButton = styled.button`
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  img {
+    width: 30px;
+    height: 30px;
+  }
+`;
+
+const Divider = styled.div`
+  display: flex;
+  align-items: center;
+  margin: ${theme.spacing.lg} 0;
+  
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid ${theme.colors.secondary};
+  }
+  
+  span {
+    padding: 0 ${theme.spacing.md};
+    color: ${theme.colors.secondary};
+  }
+`;
+
 const Links = styled.div`
   margin-top: ${theme.spacing.md};
   text-align: center;
@@ -94,6 +140,20 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handleSocialLogin = (provider: 'google' | 'kakao') => {
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const url = `${process.env.REACT_APP_ROOT_URL || 'http://localhost:8080'}/oauth2/authorization/${provider}`;
+    window.open(
+      url,
+      '소셜 로그인',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+  };
+
   return (
     <Container>
       <FormContainer>
@@ -118,6 +178,20 @@ const LoginPage: React.FC = () => {
           </Button>
           {error && <div style={{ color: 'red' }}>{error}</div>}
         </Form>
+        
+        <Divider>
+          <span>또는</span>
+        </Divider>
+        
+        <SocialLoginContainer>
+          <SocialButton onClick={() => handleSocialLogin('google')}>
+            <img src="/images/google-icon.svg" alt="Google" />
+          </SocialButton>
+          <SocialButton onClick={() => handleSocialLogin('kakao')}>
+            <img src="/images/kakao-icon.svg" alt="Kakao" />
+          </SocialButton>
+        </SocialLoginContainer>
+
         <Links>
           <Link to="/auth/register">회원가입</Link>
           <span style={{ margin: '0 10px' }}>|</span>

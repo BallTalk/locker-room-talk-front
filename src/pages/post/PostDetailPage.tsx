@@ -3,9 +3,6 @@ import styled from 'styled-components';
 import { useParams, useNavigate } from 'react-router-dom';
 import PostReportForm from './PostReportForm';
 import axios from 'axios';
-import { FaHeart, FaRegHeart, FaFlag } from 'react-icons/fa';
-import { IconContext } from 'react-icons';
-import sirenIcon from '../../assets/icons/siren.png';
 
 // 임시 유저 정보 (실제 구현시 context/recoil/zustand 등에서 가져오면 됨)
 const currentUser = {

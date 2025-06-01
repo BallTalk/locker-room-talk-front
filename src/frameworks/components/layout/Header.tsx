@@ -33,6 +33,12 @@ const Logo = styled(Link)`
   }
 `;
 
+const LogoImage = styled.img`
+  height: 48px;
+  width: auto;
+  display: block;
+`;
+
 const NavSection = styled.div`
   display: flex;
   align-items: center;

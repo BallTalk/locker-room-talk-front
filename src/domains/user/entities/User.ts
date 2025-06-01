@@ -15,16 +15,11 @@ export enum Status {
 export interface User {
   id: number;
   loginId: string;
-  provider: Provider;
-  providerUserId?: string;
   nickname: string;
-  favoriteTeamId: string;
-  profileImageUrl?: string;
-  statusMessage?: string;
-  status: Status;
-  lastLoginAt?: string;
-  loginFailCount: number;
-  deletedAt?: string;
+  email: string;
+  provider?: 'google' | 'kakao' | 'local';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserCredentials {
@@ -35,13 +30,12 @@ export interface UserCredentials {
 export interface UserRegistration {
   loginId: string;
   password: string;
-  confirmPassword: string;
   nickname: string;
-  favoriteTeamId: string;
+  email: string;
 }
 
 export interface LoginResponse {
-  token: string;
-  tokenType: string;
-  expiresAt: number;
+  accessToken: string;
+  refreshToken: string;
+  user: User;
 } 

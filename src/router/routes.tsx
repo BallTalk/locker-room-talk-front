@@ -7,6 +7,7 @@ import RegisterPage from '../pages/auth/RegisterPage';
 import MyPage from '../pages/user/MyPage';
 import PostDetailPage from '../pages/post/PostDetailPage';
 import PostFormPage from '../pages/post/PostFormPage';
+import SocialLoginCallback from '../pages/auth/SocialLoginCallback';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -19,6 +20,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/posts/:id" element={<PostDetailPage />} />
       <Route path="/post/edit/:id" element={<PostFormPage />} />
       <Route path="/post/new" element={<PostFormPage />} />
+      <Route path="/oauth2/callback" element={<SocialLoginCallback />} />
     </Routes>
   );
 };

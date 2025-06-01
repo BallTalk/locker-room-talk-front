@@ -1,85 +1,95 @@
-import { useState } from 'react';
-import { User, UserCredentials, UserRegistration } from '../entities/User';
+import { useState, useCallback } from 'react';
+import { User, UserRegistration } from '../entities/User';
 import { UserRepository } from '../repositories/UserRepository';
-import { ValidationError } from '../../../infrastructures/api/error';
+import { LoginRequest, LoginResponse, SocialLoginResponse } from '../types/auth';
 
 export const useAuth = (userRepository: UserRepository) => {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
 
-  const login = async (credentials: UserCredentials) => {
+  const login = useCallback(async (request: LoginRequest) => {
     try {
       setLoading(true);
       setError(null);
-      const loggedInUser = await userRepository.login(credentials);
-      setUser(loggedInUser);
+      const response = await userRepository.login(request);
+      setUser(response.user);
+      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem('refreshToken', response.refreshToken);
     } catch (err) {
-      if (err instanceof ValidationError) {
-        setError(Object.values(err.fieldErrors)[0] || '로그인에 실패했습니다.');
-      } else {
-        setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
-      }
+      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
       throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, [userRepository]);
 
-  const register = async (userData: UserRegistration) => {
+  const setAuth = useCallback((response: LoginResponse | SocialLoginResponse) => {
+    setUser(response.user);
+    localStorage.setItem('accessToken', response.accessToken);
+    localStorage.setItem('refreshToken', response.refreshToken);
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await userRepository.logout();
+      setUser(null);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '로그아웃에 실패했습니다.');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [userRepository]);
+
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const currentUser = await userRepository.getCurrentUser();
+      setUser(currentUser);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '인증 확인에 실패했습니다.');
+      setUser(null);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    } finally {
+      setLoading(false);
+    }
+  }, [userRepository]);
+
+  const register = useCallback(async (userData: UserRegistration) => {
     try {
       setLoading(true);
       setError(null);
       const registeredUser = await userRepository.register(userData);
       setUser(registeredUser);
     } catch (err) {
-      if (err instanceof ValidationError) {
-        setError(Object.values(err.fieldErrors)[0] || '회원가입에 실패했습니다.');
-      } else {
-        setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
-      }
+      setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
       throw err;
     } finally {
       setLoading(false);
     }
-  };
-
-  const logout = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      await userRepository.logout();
-      setUser(null);
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        setError(Object.values(err.fieldErrors)[0] || '로그아웃에 실패했습니다.');
-      } else {
-        setError(err instanceof Error ? err.message : '로그아웃에 실패했습니다.');
-      }
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkAuth = async () => {
-    try {
-      const currentUser = await userRepository.getCurrentUser();
-      setUser(currentUser);
-      return currentUser;
-    } catch (err) {
-      setUser(null);
-      return null;
-    }
-  };
+  }, [userRepository]);
 
   return {
     user,
     loading,
     error,
     login,
-    register,
+    setAuth,
     logout,
-    checkAuth
+    checkAuth,
+    register
   };
 }; 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import styled from 'styled-components';
 import AppRoutes from './router/routes';
 import Header from './frameworks/components/layout/Header';
@@ -15,14 +15,14 @@ const MainContent = styled.main`
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <Router>
       <AppContainer>
         <Header />
         <MainContent>
           <AppRoutes />
         </MainContent>
       </AppContainer>
-    </BrowserRouter>
+    </Router>
   );
 };
 

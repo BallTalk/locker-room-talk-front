@@ -89,6 +89,7 @@ const RegisterPage: React.FC = () => {
     password: '',
     confirmPassword: '',
     nickname: '',
+    email: '',
     favoriteTeamId: ''
   });
 
@@ -97,6 +98,7 @@ const RegisterPage: React.FC = () => {
     password: { isValid: false, message: '' },
     confirmPassword: { isValid: false, message: '' },
     nickname: { isValid: false, message: '' },
+    email: { isValid: false, message: '' },
     favoriteTeamId: { isValid: false, message: '' }
   });
 
@@ -147,6 +149,17 @@ const RegisterPage: React.FC = () => {
     return { isValid: true, message: '사용 가능한 닉네임입니다.' };
   };
 
+  const validateEmail = (value: string) => {
+    if (!value) {
+      return { isValid: false, message: '이메일은 필수입니다.' };
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      return { isValid: false, message: '유효한 이메일 주소를 입력해주세요.' };
+    }
+    return { isValid: true, message: '유효한 이메일 주소입니다.' };
+  };
+
   const validateFavoriteTeamId = (value: string) => {
     if (!value) {
       return { isValid: false, message: '응원 팀 ID는 필수입니다.' };
@@ -186,6 +199,12 @@ const RegisterPage: React.FC = () => {
         setValidation(prev => ({
           ...prev,
           nickname: validateNickname(value)
+        }));
+        break;
+      case 'email':
+        setValidation(prev => ({
+          ...prev,
+          email: validateEmail(value)
         }));
         break;
       case 'favoriteTeamId':
@@ -265,6 +284,18 @@ const RegisterPage: React.FC = () => {
           />
           <ValidationMessage isValid={validation.nickname.isValid}>
             {validation.nickname.message}
+          </ValidationMessage>
+
+          <Input
+            type="email"
+            name="email"
+            placeholder="이메일"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <ValidationMessage isValid={validation.email.isValid}>
+            {validation.email.message}
           </ValidationMessage>
 
           <Input
