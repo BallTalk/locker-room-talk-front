@@ -12,7 +12,7 @@ export const api = axios.create({
 // 요청 인터셉터
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken'); 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,9 +29,10 @@ api.interceptors.response.use(
   (error) => {
     // 401 에러 처리 (기존)
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('tokenType');
-      localStorage.removeItem('tokenExpiresAt');
+      localStorage.removeItem('accessToken'); // 'token' -> 'accessToken'
+      localStorage.removeItem('refreshToken'); // 추가
+      localStorage.removeItem('tokenType'); // 필요 없으면 제거
+      localStorage.removeItem('tokenExpiresAt'); // 필요 없으면 제거
       window.location.href = '/auth/login';
       return Promise.reject(error);
     }

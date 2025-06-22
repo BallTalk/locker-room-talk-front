@@ -15,7 +15,9 @@ export const useAuth = (userRepository: UserRepository) => {
       const response = await userRepository.login(request);
       setUser(response.user);
       localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
+      if (response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
       throw err;
@@ -27,21 +29,23 @@ export const useAuth = (userRepository: UserRepository) => {
   const setAuth = useCallback((response: LoginResponse | SocialLoginResponse) => {
     setUser(response.user);
     localStorage.setItem('accessToken', response.accessToken);
-    localStorage.setItem('refreshToken', response.refreshToken);
+    if (response.refreshToken) {
+      localStorage.setItem('refreshToken', response.refreshToken);
+    }
   }, []);
 
+  // 로그아웃
   const logout = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      await userRepository.logout();
+      await userRepository.logout(); // 서버에 로그아웃 요청
+    } catch (err) {
+      console.error('Logout failed on server, but proceeding with client-side logout', err);
+    } finally {
       setUser(null);
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '로그아웃에 실패했습니다.');
-      throw err;
-    } finally {
       setLoading(false);
     }
   }, [userRepository]);
@@ -68,19 +72,20 @@ export const useAuth = (userRepository: UserRepository) => {
     }
   }, [userRepository]);
 
+  
   const register = useCallback(async (userData: UserRegistration) => {
     try {
       setLoading(true);
       setError(null);
-      const registeredUser = await userRepository.register(userData);
-      setUser(registeredUser);
+      await userRepository.register(userData);
+      await login({ loginId: userData.loginId, password: userData.password });
     } catch (err) {
       setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [userRepository]);
+  }, [userRepository, login]);
 
   return {
     user,

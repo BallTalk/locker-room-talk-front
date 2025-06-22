@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { theme } from '../../../styles/theme';
 import MobileMenu from './MobileMenu';
 
+import { useAuthContext } from '../../../context/AuthContext';
+
 const HeaderContainer = styled.header`
   background: white;
   padding: ${theme.spacing.md} ${theme.spacing.xl};
@@ -115,6 +117,22 @@ const AuthButton = styled(Link)`
   }
 `;
 
+const LogoutButton = styled.button`
+  color: ${theme.colors.primary};
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: ${theme.borderRadius.medium};
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
+
+  &:hover {
+    color: ${theme.colors.secondary};
+    background: ${theme.colors.background};
+  }
+`;
+
 const MobileMenuButton = styled.button`
   display: none;
   background: none;
@@ -135,9 +153,11 @@ const MobileMenuButton = styled.button`
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, logout } = useAuthContext();
 
   return (
     <>
+      {/* 기존 스타일 컴포넌트 그대로 */}
       <HeaderContainer>
         <HeaderContent>
           <Logo to="/">Locker Room Talk</Logo>
@@ -147,17 +167,19 @@ const Header: React.FC = () => {
               <NavLink to="/teams">팀</NavLink>
               <NavLink to="/players">선수</NavLink>
             </DesktopNav>
-            <AuthButton to="/auth/login">로그인</AuthButton>
+            {user ? (
+              <>
+                <NavLink to="/mypage">{user.nickname}님</NavLink>
+                <LogoutButton onClick={logout}>로그아웃</LogoutButton>
+              </>
+            ) : (
+              <AuthButton as={Link} to="/auth/login">로그인</AuthButton>
+            )}
           </NavSection>
-          <MobileMenuButton onClick={() => setIsMobileMenuOpen(true)}>
-            ☰
-          </MobileMenuButton>
+          <MobileMenuButton onClick={() => setIsMobileMenuOpen(true)}>☰</MobileMenuButton>
         </HeaderContent>
       </HeaderContainer>
-      <MobileMenu 
-        isOpen={isMobileMenuOpen} 
-        onClose={() => setIsMobileMenuOpen(false)} 
-      />
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
     </>
   );
 };

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { theme } from '../../styles/theme';
 import { useAuth } from '../../domains/user/useCases/useAuth';
 import { UserRepositoryImpl } from '../../infrastructures/api/UserRepositoryImpl';
+import { useAuthContext } from '../../context/AuthContext';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -127,8 +128,7 @@ const LoginPage: React.FC = () => {
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const userRepository = new UserRepositoryImpl();
-  const { login, loading, error } = useAuth(userRepository);
+  const { login, loading, error } = useAuthContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,7 +136,7 @@ const LoginPage: React.FC = () => {
       await login({ loginId, password });
       navigate('/');
     } catch (err) {
-      console.error('Login failed:', err);
+      // 에러는 useAuthContext에서 관리하므로 별도 처리 안 해도 됨
     }
   };
 
@@ -145,13 +145,9 @@ const LoginPage: React.FC = () => {
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
-    
+
     const url = `${process.env.REACT_APP_ROOT_URL || 'http://localhost:8080'}/oauth2/authorization/${provider}`;
-    window.open(
-      url,
-      '소셜 로그인',
-      `width=${width},height=${height},left=${left},top=${top}`
-    );
+    window.open(url, '소셜 로그인', `width=${width},height=${height},left=${left},top=${top}`);
   };
 
   return (

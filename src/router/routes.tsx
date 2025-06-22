@@ -21,6 +21,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/post/edit/:id" element={<PostFormPage />} />
       <Route path="/post/new" element={<PostFormPage />} />
       <Route path="/oauth2/callback" element={<SocialLoginCallback />} />
+      <Route path="/auth/oauth2/callback" element={<SocialLoginCallback />} />
     </Routes>
   );
 };
