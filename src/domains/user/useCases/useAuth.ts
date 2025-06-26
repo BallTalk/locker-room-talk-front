@@ -13,6 +13,8 @@ export const useAuth = (userRepository: UserRepository) => {
       setLoading(true);
       setError(null);
       const response = await userRepository.login(request);
+      console.log(response);
+      
       setUser(response.user);
       localStorage.setItem('accessToken', response.accessToken);
       if (response.refreshToken) {
@@ -25,14 +27,6 @@ export const useAuth = (userRepository: UserRepository) => {
       setLoading(false);
     }
   }, [userRepository]);
-
-  const setAuth = useCallback((response: LoginResponse | SocialLoginResponse) => {
-    setUser(response.user);
-    localStorage.setItem('accessToken', response.accessToken);
-    if (response.refreshToken) {
-      localStorage.setItem('refreshToken', response.refreshToken);
-    }
-  }, []);
 
   // 로그아웃
   const logout = useCallback(async () => {
@@ -63,7 +57,7 @@ export const useAuth = (userRepository: UserRepository) => {
       const currentUser = await userRepository.getCurrentUser();
       setUser(currentUser);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '인증 확인에 실패했습니다.');
+      console.error('Auth check failed:', err);
       setUser(null);
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
@@ -71,6 +65,15 @@ export const useAuth = (userRepository: UserRepository) => {
       setLoading(false);
     }
   }, [userRepository]);
+
+  const setAuth = useCallback((response: LoginResponse | SocialLoginResponse) => {
+    setUser(response.user);
+    localStorage.setItem('accessToken', response.token);
+    // if (response.refreshToken) {
+    //   localStorage.setItem('refreshToken', response.refreshToken);
+    // }
+    checkAuth();
+  }, [checkAuth]);
 
   
   const register = useCallback(async (userData: UserRegistration) => {

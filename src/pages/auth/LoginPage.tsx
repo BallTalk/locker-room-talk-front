@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { theme } from '../../styles/theme';
-import { useAuth } from '../../domains/user/useCases/useAuth';
-import { UserRepositoryImpl } from '../../infrastructures/api/UserRepositoryImpl';
 import { useAuthContext } from '../../context/AuthContext';
 
 const Container = styled.div`

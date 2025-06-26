@@ -7,6 +7,9 @@ export class UserRepositoryImpl implements UserRepository {
 
   async login(request: LoginRequest): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>('/auth/login', request);
+    console.log(response);
+    console.log(localStorage);
+    
     return response.data;
   }
 
@@ -60,9 +63,11 @@ export class UserRepositoryImpl implements UserRepository {
     });
     return response.data;
   }
-
-  async handleSocialLoginCallback(provider: 'google' | 'kakao', code: string): Promise<any> {
-    const response = await api.post(`/auth/social/callback`, { provider, code });
+  
+  async handleSocialLoginCallback(code: string): Promise<SocialLoginResponse> {
+    const response = await api.post<SocialLoginResponse>('/auth/oauth2/callback', { code });
+    console.log(response);
+    
     return response.data;
   }
 } 

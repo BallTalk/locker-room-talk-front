@@ -16,7 +16,6 @@ export interface User {
   id: number;
   loginId: string;
   nickname: string;
-  email: string;
   provider?: 'google' | 'kakao' | 'local';
   createdAt?: string;
   updatedAt?: string;
@@ -33,9 +32,3 @@ export interface UserRegistration {
   nickname: string;
   email: string;
 }
-
-export interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: User;
-} 

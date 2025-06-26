@@ -6,24 +6,26 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
+  token: string;        // 백엔드와 맞춤
+  tokenType: string;    // 백엔드와 맞춤
+  expirationMs: number; // 백엔드와 맞춤
   user: {
     id: number;
     loginId: string;
     nickname: string;
-    email: string;
   };
 }
 
 export type SocialProvider = 'google' | 'kakao';
 
 export interface SocialLoginResponse {
-  accessToken: string;
-  refreshToken: string;
+  token: string;        // 백엔드와 맞춤
+  tokenType: string;    // 백엔드와 맞춤
+  expirationMs: number; // 백엔드와 맞춤
   user: {
     id: number;
     loginId: string;
     nickname: string;
-    email: string;
     provider: SocialProvider;
   };
 } 
