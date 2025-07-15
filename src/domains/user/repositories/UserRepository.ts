@@ -1,4 +1,4 @@
-import { User, UserCredentials, UserRegistration } from '../entities/User';
+import { User, UserRegistration } from '../entities/User';
 import { LoginRequest, LoginResponse, SocialLoginResponse } from '../types/auth';
 
 export interface UserRepository {

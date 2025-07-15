@@ -25,10 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const auth = useAuth(userRepository);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      auth.checkAuth();
-    }
+    auth.checkAuth();
   }, []);
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 };

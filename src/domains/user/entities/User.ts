@@ -13,17 +13,14 @@ export enum Status {
 }
 
 export interface User {
-  id: number;
+  id: number; // User 식별자
   loginId: string;
   nickname: string;
-  provider?: 'google' | 'kakao' | 'local';
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface UserCredentials {
-  loginId: string;
-  password: string;
+  provider: Provider;
+  favoriteTeam: string;
+  profileImageUrl: string | null;
+  statusMessage: string | null;
+  status: Status;
 }
 
 export interface UserRegistration {

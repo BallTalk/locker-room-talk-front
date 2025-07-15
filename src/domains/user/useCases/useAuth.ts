@@ -8,34 +8,45 @@ export const useAuth = (userRepository: UserRepository) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const login = useCallback(async (request: LoginRequest) => {
+
+  const checkAuth = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const response = await userRepository.login(request);
-      console.log(response);
-      
-      setUser(response.user);
-      localStorage.setItem('accessToken', response.accessToken);
-      if (response.refreshToken) {
-        localStorage.setItem('refreshToken', response.refreshToken);
-      }
+      const currentUser = await userRepository.getCurrentUser();
+      setUser(currentUser); // 성공 시 유저 객체, 실패 시 null이 될 수 있음
     } catch (err) {
+      console.error('인증 상태 확인 실패:', err);
+      setUser(null); // 에러 발생 시 무조건 비로그인 상태로 처리
+    }
+  }, [userRepository]);
+
+
+  const login = useCallback(async (request: LoginRequest) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 1단계: 서버에 로그인 요청해서 HttpOnly 쿠키를 발급받음
+      // 이 API의 응답 본문은 사용하지 않음
+      await userRepository.login(request);
+
+      // 2단계: 발급받은 쿠키를 사용해 /user/me를 호출, 유저 정보를 가져와 상태에 저장
+      await checkAuth();
+
+    } catch (err) {
+      setUser(null); // 로그인 실패 시 확실하게 user 상태를 비움
       setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
-      throw err;
+      throw err; // 에러를 다시 던져서 LoginPage에서 후속 처리를 할 수 있게 함
     } finally {
       setLoading(false);
     }
-  }, [userRepository]);
+  }, [userRepository, checkAuth]);
 
   // 로그아웃
   const logout = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      await userRepository.logout(); // 서버에 로그아웃 요청
+      await userRepository.logout();
     } catch (err) {
-      console.error('Logout failed on server, but proceeding with client-side logout', err);
+      console.error('Logout failed on server, proceeding with client-side logout', err);
     } finally {
       setUser(null);
       localStorage.removeItem('accessToken');
@@ -44,36 +55,10 @@ export const useAuth = (userRepository: UserRepository) => {
     }
   }, [userRepository]);
 
-  const checkAuth = useCallback(async () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      setUser(null);
-      return;
-    }
 
-    try {
-      setLoading(true);
-      setError(null);
-      const currentUser = await userRepository.getCurrentUser();
-      setUser(currentUser);
-    } catch (err) {
-      console.error('Auth check failed:', err);
-      setUser(null);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-    } finally {
-      setLoading(false);
-    }
-  }, [userRepository]);
-
-  const setAuth = useCallback((response: LoginResponse | SocialLoginResponse) => {
+  const setAuth = useCallback((response: SocialLoginResponse) => {
     setUser(response.user);
-    localStorage.setItem('accessToken', response.token);
-    // if (response.refreshToken) {
-    //   localStorage.setItem('refreshToken', response.refreshToken);
-    // }
-    checkAuth();
-  }, [checkAuth]);
+  }, []);
 
   
   const register = useCallback(async (userData: UserRegistration) => {

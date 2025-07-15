@@ -2,12 +2,14 @@ import React from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { theme } from '../../../styles/theme';
+import { User } from '../../../domains/user/entities/User';
 
 interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  user: User | null; // user prop 추가
+  logout: () => Promise<void>; // logout prop 추가
 }
-
 const Overlay = styled.div<{ isOpen: boolean }>`
   position: fixed;
   top: 0;
@@ -67,7 +69,32 @@ const MenuItem = styled(Link)`
   }
 `;
 
-const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
+const LogoutMenuItem = styled.button`
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: ${theme.spacing.md};
+  color: ${theme.colors.text.primary};
+  text-decoration: none;
+  border-radius: ${theme.borderRadius.medium};
+  transition: all 0.3s ease;
+  background: none;
+  border: none;
+  font-size: 1rem; // MenuItem의 Link와 폰트 크기 맞춤
+  cursor: pointer;
+
+  &:hover {
+    background: ${theme.colors.background};
+    color: ${theme.colors.primary};
+  }
+`;
+
+const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, user, logout }) => {
+  const handleLogout = () => {
+    logout();
+    onClose();
+  };
+
   return (
     <>
       <Overlay isOpen={isOpen} onClick={onClose} />
@@ -78,12 +105,22 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
           <MenuItem to="/posts" onClick={onClose}>게시판</MenuItem>
           <MenuItem to="/teams" onClick={onClose}>팀</MenuItem>
           <MenuItem to="/players" onClick={onClose}>선수</MenuItem>
-          <MenuItem to="/auth/login" onClick={onClose}>로그인</MenuItem>
-          <MenuItem to="/auth/register" onClick={onClose}>회원가입</MenuItem>
+
+          {user ? (
+            <>
+              <MenuItem to="/mypage" onClick={onClose}>마이페이지 ({user.nickname}님)</MenuItem>
+              <LogoutMenuItem onClick={handleLogout}>로그아웃</LogoutMenuItem>
+            </>
+          ) : (
+            <>
+              <MenuItem to="/auth/login" onClick={onClose}>로그인</MenuItem>
+              <MenuItem to="/auth/register" onClick={onClose}>회원가입</MenuItem>
+            </>
+          )}
         </MenuList>
       </MenuContainer>
     </>
   );
 };
 
-export default MobileMenu; 
+export default MobileMenu;

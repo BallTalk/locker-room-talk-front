@@ -7,9 +7,6 @@ export class UserRepositoryImpl implements UserRepository {
 
   async login(request: LoginRequest): Promise<LoginResponse> {
     const response = await api.post<LoginResponse>('/auth/login', request);
-    console.log(response);
-    console.log(localStorage);
-    
     return response.data;
   }
 
@@ -17,8 +14,6 @@ export class UserRepositoryImpl implements UserRepository {
   async register(userData: UserRegistration): Promise<User> {
     await api.post('/user', userData); // 회원가입 API는 201 Created만 반환
     
-    // 백엔드가 회원가입 후 자동 로그인을 시켜주지 않으므로,
-    // 프론트에서 다시 로그인 API를 호출해야 함.
     const loginResponse = await this.login({
       loginId: userData.loginId,
       password: userData.password,
@@ -37,8 +32,6 @@ export class UserRepositoryImpl implements UserRepository {
   // 내 정보 가져오기 (토큰으로)
   async getCurrentUser(): Promise<User | null> {
     try {
-      // 백엔드의 /api/user/me 응답 타입(MyProfileResponse)에 맞춰줘야 함
-      // 여기서는 일단 User 타입과 호환된다고 가정.
       const response = await api.get<User>('/user/me');
       return response.data;
     } catch (error) {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; 
 import { theme } from '../../../styles/theme';
 import MobileMenu from './MobileMenu';
 
@@ -153,7 +153,29 @@ const MobileMenuButton = styled.button`
 
 const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, logout } = useAuthContext();
+  const { user, logout, loading } = useAuthContext();
+  const navigate = useNavigate();
+
+  // /user/me 호출해서 응답을 콘솔에 찍는 함수
+  const handleLogUserMe = async () => {
+    try {
+      const apiModule = await import('../../../infrastructures/api/api');
+      const api = apiModule.api;
+      // 실제 요청 URL 확인
+      const url = api.defaults.baseURL + '/user/me';
+      console.log('요청 URL:', url);
+      const response = await api.get('/user/me');
+      // 파싱 없이 전체 응답 콘솔에 출력
+      console.log(response);
+    } catch (error) {
+      console.error('user/me 요청 실패:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout(); // 상태만 변경하는 logout 함수 호출
+    navigate('/'); // logout 함수가 끝나면 메인 페이지로 이동
+  };
 
   return (
     <>
@@ -167,19 +189,29 @@ const Header: React.FC = () => {
               <NavLink to="/teams">팀</NavLink>
               <NavLink to="/players">선수</NavLink>
             </DesktopNav>
-            {user ? (
+            {/* 내 정보 콘솔로그 버튼 추가 */}
+            <button onClick={handleLogUserMe} style={{ marginRight: 12, padding: '6px 12px', borderRadius: 6, border: '1px solid #ccc', background: '#f9f9f9', cursor: 'pointer' }}>
+              내 정보 콘솔로그
+            </button>
+            {!loading && (
               <>
-                <NavLink to="/mypage">{user.nickname}님</NavLink>
-                <LogoutButton onClick={logout}>로그아웃</LogoutButton>
+                {user ? (
+                  <>
+                    <NavLink to="/mypage">{user.nickname}님</NavLink>
+                    <LogoutButton onClick={handleLogout}>로그아웃</LogoutButton>
+                  </>
+                ) : (
+                  <AuthButton as={Link} to="/auth/login">
+                    로그인
+                  </AuthButton>
+                )}
               </>
-            ) : (
-              <AuthButton as={Link} to="/auth/login">로그인</AuthButton>
             )}
           </NavSection>
           <MobileMenuButton onClick={() => setIsMobileMenuOpen(true)}>☰</MobileMenuButton>
         </HeaderContent>
       </HeaderContainer>
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} user={user} logout={handleLogout} />
     </>
   );
 };

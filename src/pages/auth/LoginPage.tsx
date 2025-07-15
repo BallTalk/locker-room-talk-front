@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { theme } from '../../styles/theme';
@@ -126,15 +126,25 @@ const LoginPage: React.FC = () => {
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-  const { login, loading, error } = useAuthContext();
+  const { login, loading, error, checkAuth, user } = useAuthContext();
+
+
+  // useEffect를 사용해서 user 상태가 변경되면 메인 페이지로 이동
+  useEffect(() => {
+    console.log(user);
+    
+    if (user) {
+      console.log('LoginPage: user 상태 변경 감지! 메인 페이지로 이동합니다.', user);
+      navigate('/');
+    }
+  }, [user, navigate]);// user 상태가 변경될 때마다 이 effect가 실행됨
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await login({ loginId, password });
-      navigate('/');
     } catch (err) {
-      // 에러는 useAuthContext에서 관리하므로 별도 처리 안 해도 됨
+      console.error('로그인 실패:', err);
     }
   };
 
@@ -143,9 +153,21 @@ const LoginPage: React.FC = () => {
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
+    const url = `${process.env.REACT_APP_ROOT_URL}/oauth2/authorization/${provider}`;
 
-    const url = `${process.env.REACT_APP_ROOT_URL || 'http://localhost:8080'}/oauth2/authorization/${provider}`;
-    window.open(url, '소셜 로그인', `width=${width},height=${height},left=${left},top=${top}`);
+    const popup = window.open(url, '소셜 로그인', `width=${width},height=${height},left=${left},top=${top}`);
+
+    // 팝업이 닫혔는지 확인하기 위한 타이머 설정
+    const timer = setInterval(() => {
+      // 팝업이 닫혔거나, 팝업 내에서 다른 페이지로 이동했다면
+      if (popup === null || popup.closed) {
+        clearInterval(timer);
+        // 팝업이 닫혔으므로, 로그인 상태가 변경되었을 가능성이 있음.
+        // checkAuth()를 명시적으로 호출해서 사용자 정보를 다시 가져온다.
+        console.log('소셜 로그인 팝업이 닫혔습니다. 인증 상태를 다시 확인합니다.');
+        checkAuth();
+      }
+    }, 100);
   };
 
   return (
