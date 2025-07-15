@@ -131,7 +131,6 @@ const LoginPage: React.FC = () => {
 
   // useEffect를 사용해서 user 상태가 변경되면 메인 페이지로 이동
   useEffect(() => {
-    console.log(user);
     
     if (user) {
       console.log('LoginPage: user 상태 변경 감지! 메인 페이지로 이동합니다.', user);
@@ -159,11 +158,8 @@ const LoginPage: React.FC = () => {
 
     // 팝업이 닫혔는지 확인하기 위한 타이머 설정
     const timer = setInterval(() => {
-      // 팝업이 닫혔거나, 팝업 내에서 다른 페이지로 이동했다면
       if (popup === null || popup.closed) {
         clearInterval(timer);
-        // 팝업이 닫혔으므로, 로그인 상태가 변경되었을 가능성이 있음.
-        // checkAuth()를 명시적으로 호출해서 사용자 정보를 다시 가져온다.
         console.log('소셜 로그인 팝업이 닫혔습니다. 인증 상태를 다시 확인합니다.');
         checkAuth();
       }

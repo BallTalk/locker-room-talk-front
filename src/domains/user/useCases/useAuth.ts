@@ -5,17 +5,21 @@ import { LoginRequest, LoginResponse, SocialLoginResponse } from '../types/auth'
 
 export const useAuth = (userRepository: UserRepository) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
 
   const checkAuth = useCallback(async () => {
     try {
       const currentUser = await userRepository.getCurrentUser();
-      setUser(currentUser); // 성공 시 유저 객체, 실패 시 null이 될 수 있음
-    } catch (err) {
-      console.error('인증 상태 확인 실패:', err);
-      setUser(null); // 에러 발생 시 무조건 비로그인 상태로 처리
+      setUser(currentUser);
+    } catch (err: any) {
+      if (err.response?.status !== 401 && err.response?.status !== 403) {
+        console.error('인증 상태 확인 중 예상치 못한 오류 발생:', err);
+      }
+      setUser(null); 
+    } finally {
+      setLoading(false);
     }
   }, [userRepository]);
 
@@ -24,17 +28,29 @@ export const useAuth = (userRepository: UserRepository) => {
     setLoading(true);
     setError(null);
     try {
-      // 1단계: 서버에 로그인 요청해서 HttpOnly 쿠키를 발급받음
-      // 이 API의 응답 본문은 사용하지 않음
       await userRepository.login(request);
 
-      // 2단계: 발급받은 쿠키를 사용해 /user/me를 호출, 유저 정보를 가져와 상태에 저장
       await checkAuth();
 
-    } catch (err) {
-      setUser(null); // 로그인 실패 시 확실하게 user 상태를 비움
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
-      throw err; // 에러를 다시 던져서 LoginPage에서 후속 처리를 할 수 있게 함
+    } catch (err: any) {
+      setUser(null); 
+
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+
+      if (err.response && err.response.status) {
+        const status = err.response.status;
+
+        if (status === 500) {
+          errorMessage = '아이디 또는 비밀번호가 올바르지 않거나, 서버에 문제가 발생했습니다.';
+        } else if (err.response.data && err.response.data.message) {
+          errorMessage = err.response.data.message;
+        }
+      }
+      
+      console.error('로그인 실패 응답:', err.response);
+      setError(errorMessage); // 최종적으로 결정된 에러 메시지를 상태에 저장
+      
+      throw err;
     } finally {
       setLoading(false);
     }

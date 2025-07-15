@@ -10,20 +10,20 @@ interface MobileMenuProps {
   user: User | null; // user prop 추가
   logout: () => Promise<void>; // logout prop 추가
 }
-const Overlay = styled.div<{ isOpen: boolean }>`
+const Overlay = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
-  opacity: ${props => props.isOpen ? 1 : 0};
-  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  opacity: ${props => props.$isOpen ? 1 : 0};
+  visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
   transition: all 0.3s ease;
   z-index: 1000;
 `;
 
-const MenuContainer = styled.div<{ isOpen: boolean }>`
+const MenuContainer = styled.div<{ $isOpen: boolean }>`
   position: fixed;
   top: 0;
   right: 0;
@@ -32,7 +32,7 @@ const MenuContainer = styled.div<{ isOpen: boolean }>`
   height: 100vh;
   background: white;
   padding: ${theme.spacing.xl};
-  transform: translateX(${props => props.isOpen ? '0' : '100%'});
+  transform: translateX(${props => props.$isOpen ? '0' : '100%'});
   transition: transform 0.3s ease;
   z-index: 1001;
   box-shadow: ${theme.shadows.leather};
@@ -97,8 +97,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose, user, logout }
 
   return (
     <>
-      <Overlay isOpen={isOpen} onClick={onClose} />
-      <MenuContainer isOpen={isOpen}>
+      <Overlay $isOpen={isOpen} onClick={onClose} />
+      <MenuContainer $isOpen={isOpen}>
         <CloseButton onClick={onClose}>×</CloseButton>
         <MenuList>
           <MenuItem to="/" onClick={onClose}>홈</MenuItem>

@@ -16,7 +16,8 @@ api.interceptors.response.use(
   (error) => {
     // 인증 에러시 로그인 페이지로 리다이렉트만
     if (error.response?.status === 401 || error.response?.status === 403) {
-      if (!window.location.pathname.includes('/auth/login')) {
+      if (error.config.url !== '/user/me' && !window.location.pathname.includes('/auth/login')) {
+        alert('세션이 만료되었습니다. 다시 로그인해주세요.');
         window.location.href = '/auth/login';
       }
       return Promise.reject(error);

@@ -29,13 +29,13 @@ export class UserRepositoryImpl implements UserRepository {
     // 로컬의 토큰은 useAuth 훅에서 제거할 것임.
   }
 
-  // 내 정보 가져오기 (토큰으로)
+  // 내 정보 가져오기 
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await api.get<User>('/user/me');
       return response.data;
     } catch (error) {
-      console.error('Failed to fetch current user:', error);
+      // console.error('Failed to fetch current user:', error);
       return null;
     }
   }
@@ -51,10 +51,15 @@ export class UserRepositoryImpl implements UserRepository {
 
   // 아이디 중복 확인
   async checkLoginIdExists(loginId: string): Promise<boolean> {
-    const response = await api.get<boolean>('/user/exists', {
-      params: { loginId },
-    });
-    return response.data;
+    try {
+      const response = await api.get<boolean>('/user/exists', {
+        params: { loginId },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to fetch current user:', error);
+      return false;
+    }
   }
   
   async handleSocialLoginCallback(code: string): Promise<SocialLoginResponse> {

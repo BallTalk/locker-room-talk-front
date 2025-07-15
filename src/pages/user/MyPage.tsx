@@ -3,6 +3,7 @@ import styled, { css } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../context/AuthContext';
 import { theme } from '../../styles/theme';
+import ProfileEditForm from '../../frameworks/components/user/ProfileEditForm'; 
 
 const Container = styled.div`
   max-width: 1200px;
@@ -64,15 +65,15 @@ const MenuList = styled.ul`
 `;
 
 // active 상태에 따라 스타일을 다르게 주기 위한 props 추가
-const MenuItem = styled.li<{ active: boolean }>`
+const MenuItem = styled.li<{ $active: boolean }>`
   padding: ${theme.spacing.md};
   cursor: pointer;
   border-radius: ${theme.borderRadius.medium};
   transition: all 0.3s ease;
-  font-weight: ${props => props.active ? 'bold' : 'normal'};
-  color: ${props => props.active ? theme.colors.primary : theme.colors.text.primary};
+  font-weight: ${props => props.$active ? 'bold' : 'normal'};
+  color: ${props => props.$active ? theme.colors.primary : theme.colors.text.primary};
   
-  ${props => props.active && css`
+  ${props => props.$active && css`
     background: ${theme.colors.background};
   `}
 
@@ -97,7 +98,6 @@ const SectionTitle = styled.h3`
 `;
 
 // 각 메뉴에 해당하는 컨텐츠 컴포넌트 (지금은 placeholder)
-const UserProfileContent = () => <p>내 정보를 수정할 수 있습니다.</p>;
 const UserPostsContent = () => <p>내가 작성한 게시글 목록이 표시됩니다.</p>;
 const LikedPostsContent = () => <p>좋아요를 누른 게시글 목록이 표시됩니다.</p>;
 const NotificationSettings = () => <p>알림 설정을 변경할 수 있습니다.</p>;
@@ -111,21 +111,23 @@ const MyPage: React.FC = () => {
   useEffect(() => {
     // 로딩이 끝났는데 user 정보가 없으면
     if (!loading && !user) {
-      alert('로그인이 필요한 페이지입니다.');
       navigate('/auth/login');
     }
   }, [user, loading, navigate]);
 
   // 로딩 중이거나, 리다이렉션 되기 전까지는 로딩 화면을 보여줌
-  if (loading || !user) {
+  if (loading) {
     return <div>로딩 중...</div>;
+  }
+  if (!user) {
+    return null;
   }
 
   // 메뉴에 따라 보여줄 컨텐츠를 결정하는 함수
   const renderContent = () => {
     switch (activeMenu) {
       case '내 정보':
-        return <UserProfileContent />;
+        return <ProfileEditForm  />;
       case '내 게시글':
         return <UserPostsContent />;
       case '좋아요한 게시글':
@@ -133,33 +135,33 @@ const MyPage: React.FC = () => {
       case '알림 설정':
         return <NotificationSettings />;
       default:
-        return <UserProfileContent />;
+        return <ProfileEditForm  />;
     }
   };
 
   const menuItems = ['내 정보', '내 게시글', '좋아요한 게시글', '알림 설정'];
+  const hasProfileImage = user.profileImageUrl && user.profileImageUrl !== 'default_profile_image_url';
 
   return (
     <Container>
       <Sidebar>
         <ProfileSection>
           <ProfileImage>
-            {/* user.profileImageUrl이 있으면 이미지를, 없으면 닉네임 첫 글자를 보여줌 */}
-            {user.profileImageUrl && user.profileImageUrl !== 'default_profile_image_url' ? (
-              <img src={user.profileImageUrl} alt={user.nickname} />
+            {hasProfileImage ? (
+              <img src={user.profileImageUrl!} alt={user.nickname} />
             ) : (
-              <span style={{ fontSize: '3rem', color: 'white' }}>{user.nickname[0]}</span>
+              // ★★★ 닉네임 첫 글자 대문자로 변경 ★★★
+              <span style={{ fontSize: '3rem', color: 'white' }}>{user.nickname[0].toUpperCase()}</span>
             )}
           </ProfileImage>
           <Username>{user.nickname}</Username>
-          {/* 백엔드 User 모델에 email이 없으므로 loginId를 대신 표시 */}
           <LoginId>{user.loginId}</LoginId>
         </ProfileSection>
         <MenuList>
           {menuItems.map((item) => (
             <MenuItem
               key={item}
-              active={activeMenu === item}
+              $active={activeMenu === item}
               onClick={() => setActiveMenu(item)}
             >
               {item}

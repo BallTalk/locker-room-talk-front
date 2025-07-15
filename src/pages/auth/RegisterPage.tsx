@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { theme } from '../../styles/theme';
-import { useAuth } from '../../domains/user/useCases/useAuth';
+import { useAuthContext } from '../../context/AuthContext';
+import { api } from '../../infrastructures/api/api';
 import { UserRepositoryImpl } from '../../infrastructures/api/UserRepositoryImpl';
 
 const Container = styled.div`
@@ -36,6 +37,19 @@ const Form = styled.form`
   gap: ${theme.spacing.md};
 `;
 
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${theme.spacing.xs}; // 라벨, 인풋, 메시지 간 간격
+`;
+
+
+const Label = styled.label`
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: ${theme.colors.text.secondary};
+`;
+
 const Input = styled.input`
   padding: ${theme.spacing.md};
   border: 1px solid ${theme.colors.secondary};
@@ -45,6 +59,10 @@ const Input = styled.input`
   &:focus {
     border-color: ${theme.colors.primary};
     outline: none;
+  }
+  &:disabled {
+    background-color: ${theme.colors.background};
+    cursor: not-allowed;
   }
 `;
 
@@ -63,6 +81,48 @@ const Button = styled.button`
   }
 `;
 
+const InputWithButton = styled.div`
+  display: flex;
+  gap: ${theme.spacing.sm};
+  align-items: flex-start;
+`;
+
+const SmallButton = styled.button`
+  padding: ${theme.spacing.md};
+  background: ${theme.colors.secondary};
+  color: white;
+  border: none;
+  border-radius: ${theme.borderRadius.medium};
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 0.9;
+  }
+  
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+const SubmitButton = styled.button`
+  padding: ${theme.spacing.md};
+  background: ${theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: ${theme.borderRadius.medium};
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: ${theme.spacing.md};
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
 const Links = styled.div`
   margin-top: ${theme.spacing.md};
   text-align: center;
@@ -77,10 +137,32 @@ const Links = styled.div`
   }
 `;
 
-const ValidationMessage = styled.div<{ isValid?: boolean }>`
+
+const ApiErrorMessage = styled.p`
+  color: ${theme.colors.error};
+  font-size: 0.9rem;
+  text-align: center;
+  min-height: 1.2em;
+`;
+
+const ErrorMessage = styled.p`
+  color: ${theme.colors.error};
+  font-size: 0.9rem;
+  text-align: center;
+  min-height: 1.2em;
+`;
+
+const TimerText = styled.span`
+  font-size: 0.9rem;
+  color: ${theme.colors.primary};
+  margin-left: ${theme.spacing.sm};
+`;
+
+const ValidationMessage = styled.p<{ $isValid?: boolean }>`
   font-size: 0.8rem;
   margin-top: 4px;
-  color: ${props => props.isValid ? theme.colors.success : theme.colors.error};
+  min-height: 1.1em;
+  color: ${props => (props.$isValid === undefined ? 'transparent' : props.$isValid ? theme.colors.success : theme.colors.error)};
 `;
 
 const RegisterPage: React.FC = () => {
@@ -89,8 +171,9 @@ const RegisterPage: React.FC = () => {
     password: '',
     confirmPassword: '',
     nickname: '',
-    email: '',
-    favoriteTeamId: ''
+    phoneNumber: '',
+    verificationCode: '',
+    favoriteTeam: 'NOT_SET',
   });
 
   const [validation, setValidation] = useState({
@@ -98,13 +181,17 @@ const RegisterPage: React.FC = () => {
     password: { isValid: false, message: '' },
     confirmPassword: { isValid: false, message: '' },
     nickname: { isValid: false, message: '' },
-    email: { isValid: false, message: '' },
-    favoriteTeamId: { isValid: false, message: '' }
+    phoneNumber: { isValid: undefined as boolean | undefined, message: '' },
   });
 
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const { register, loading } = useAuthContext();
   const navigate = useNavigate();
   const userRepository = new UserRepositoryImpl();
-  const { register, loading, error } = useAuth(userRepository);
 
   const validateLoginId = (value: string) => {
     if (!value) {
@@ -149,23 +236,21 @@ const RegisterPage: React.FC = () => {
     return { isValid: true, message: '사용 가능한 닉네임입니다.' };
   };
 
-  const validateEmail = (value: string) => {
-    if (!value) {
-      return { isValid: false, message: '이메일은 필수입니다.' };
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) {
-      return { isValid: false, message: '유효한 이메일 주소를 입력해주세요.' };
-    }
-    return { isValid: true, message: '유효한 이메일 주소입니다.' };
+  const validatePhoneNumber = (value: string) => {
+    if (!value) return { isValid: undefined, message: '' };
+    if (!/^010\d{8}$/.test(value)) return { isValid: false, message: "'-' 없이 11자리 휴대폰 번호를 입력해주세요." };
+    return { isValid: true, message: '올바른 형식의 번호입니다.' };
   };
 
-  const validateFavoriteTeamId = (value: string) => {
-    if (!value) {
-      return { isValid: false, message: '응원 팀 ID는 필수입니다.' };
+  useEffect(() => {
+    if (timer > 0) {
+      const interval = setInterval(() => {
+        setTimer(prev => prev - 1);
+      }, 1000);
+      return () => clearInterval(interval);
     }
-    return { isValid: true, message: '유효한 팀 ID입니다.' };
-  };
+  }, [timer]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -182,13 +267,12 @@ const RegisterPage: React.FC = () => {
           loginId: validateLoginId(value)
         }));
         break;
-      case 'password':
-        setValidation(prev => ({
-          ...prev,
-          password: validatePassword(value),
-          confirmPassword: validateConfirmPassword(formData.confirmPassword, value)
-        }));
-        break;
+        case 'password':
+          setValidation(prev => ({ ...prev, password: validatePassword(value) }));
+          if (formData.confirmPassword) {
+              setValidation(prev => ({...prev, confirmPassword: validateConfirmPassword(formData.confirmPassword, value)}));
+          }
+          break;
       case 'confirmPassword':
         setValidation(prev => ({
           ...prev,
@@ -201,39 +285,53 @@ const RegisterPage: React.FC = () => {
           nickname: validateNickname(value)
         }));
         break;
-      case 'email':
-        setValidation(prev => ({
-          ...prev,
-          email: validateEmail(value)
-        }));
-        break;
-      case 'favoriteTeamId':
-        setValidation(prev => ({
-          ...prev,
-          favoriteTeamId: validateFavoriteTeamId(value)
-        }));
-        break;
     }
   };
 
+  const handleSendCode = async () => {
+    const { isValid } = validatePhoneNumber(formData.phoneNumber);
+    if (!isValid) {
+      setApiError('올바른 형식의 휴대폰 번호를 입력해주세요.');
+      return;
+    }
+    setApiError(null);
+    try {
+      await api.post('/auth/sms/send', { phoneNumber: formData.phoneNumber, purpose: 'SIGNUP' });
+      alert('인증번호가 발송되었습니다.');
+      setIsCodeSent(true);
+      setTimer(300);
+    } catch (err: any) { setApiError(err.response?.data?.message || '인증번호 발송에 실패했습니다.'); }
+  };
+
   const handleLoginIdBlur = async () => {
-    if (!formData.loginId) return;
-    
+    if (!validation.loginId.isValid) return;
     try {
       const exists = await userRepository.checkLoginIdExists(formData.loginId);
       if (exists) {
-        setValidation(prev => ({
-          ...prev,
-          loginId: { isValid: false, message: '중복된 로그인 아이디입니다.' }
-        }));
-      } else {
-        setValidation(prev => ({
-          ...prev,
-          loginId: { isValid: true, message: '사용 가능한 아이디입니다.' }
-        }));
+        setValidation(prev => ({ ...prev, loginId: { isValid: false, message: '이미 사용 중인 아이디입니다.' }}));
       }
-    } catch (err) {
-      console.error('아이디 중복 확인 실패:', err);
+    } catch (err) { console.error('아이디 중복 확인 실패:', err); }
+  };
+  
+
+  // 인증번호 확인 요청
+  const handleVerifyCode = async () => {
+    if (!formData.verificationCode) {
+      setApiError('인증번호를 입력해주세요.');
+      return;
+    }
+    setApiError(null);
+    try {
+      await api.post('/auth/sms/verify', {
+        phoneNumber: formData.phoneNumber,
+        code: formData.verificationCode,
+        purpose: 'SIGNUP',
+      });
+      alert('인증에 성공했습니다.');
+      setIsPhoneVerified(true);
+      setTimer(0); // 타이머 중지
+    } catch (err: any) {
+      setApiError(err.response?.data?.message || '인증번호가 올바르지 않습니다.');
     }
   };
 
@@ -241,107 +339,86 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     
     // 모든 필드의 유효성 검사
-    const isFormValid = Object.values(validation).every(v => v.isValid);
-    
-    if (!isFormValid) {
-      alert('모든 필드를 올바르게 입력해주세요.');
+    const isFormValid = Object.values(validation).every(v => v.isValid === true);
+    if (!isFormValid || !isPhoneVerified) {
+      alert('입력 정보를 모두 올바르게 채우고, 휴대폰 인증을 완료해주세요.');
       return;
     }
 
+    setApiError(null);
     try {
       await register(formData);
       navigate('/');
-    } catch (err) {
-      console.error('Registration failed:', err);
-    }
+    } catch (err: any) { setApiError(err.response?.data?.message || '회원가입에 실패했습니다.'); }
   };
 
+  const isAllFieldsValid = Object.values(validation).every(v => v.isValid === true);
+
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+    return `${minutes}:${formattedSeconds}`;
+  };
+  
   return (
     <Container>
       <FormContainer>
         <Title>회원가입</Title>
         <Form onSubmit={handleSubmit}>
-          <Input
-            type="text"
-            name="loginId"
-            placeholder="아이디"
-            value={formData.loginId}
-            onChange={handleChange}
-            onBlur={handleLoginIdBlur}
-            required
-          />
-          <ValidationMessage isValid={validation.loginId.isValid}>
-            {validation.loginId.message}
-          </ValidationMessage>
+          <FormGroup>
+            <Label htmlFor="loginId">아이디</Label>
+            <Input id="loginId" name="loginId" value={formData.loginId} onChange={handleChange} onBlur={handleLoginIdBlur} required />
+            <ValidationMessage $isValid={validation.loginId.isValid}>{validation.loginId.message}</ValidationMessage>
+          </FormGroup>
 
-          <Input
-            type="text"
-            name="nickname"
-            placeholder="닉네임"
-            value={formData.nickname}
-            onChange={handleChange}
-            required
-          />
-          <ValidationMessage isValid={validation.nickname.isValid}>
-            {validation.nickname.message}
-          </ValidationMessage>
+          <FormGroup>
+            <Label htmlFor="nickname">닉네임</Label>
+            <Input id="nickname" name="nickname" value={formData.nickname} onChange={handleChange} required />
+            <ValidationMessage $isValid={validation.nickname.isValid}>{validation.nickname.message}</ValidationMessage>
+          </FormGroup>
 
-          <Input
-            type="email"
-            name="email"
-            placeholder="이메일"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          <ValidationMessage isValid={validation.email.isValid}>
-            {validation.email.message}
-          </ValidationMessage>
+          <FormGroup>
+            <Label htmlFor="password">비밀번호</Label>
+            <Input id="password" name="password" type="password" value={formData.password} onChange={handleChange} required />
+            <ValidationMessage $isValid={validation.password.isValid}>{validation.password.message}</ValidationMessage>
+          </FormGroup>
 
-          <Input
-            type="text"
-            name="favoriteTeamId"
-            placeholder="응원 팀 ID (예: samsung)"
-            value={formData.favoriteTeamId}
-            onChange={handleChange}
-            required
-          />
-          <ValidationMessage isValid={validation.favoriteTeamId.isValid}>
-            {validation.favoriteTeamId.message}
-          </ValidationMessage>
+          <FormGroup>
+            <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+            <Input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
+            <ValidationMessage $isValid={validation.confirmPassword.isValid}>{validation.confirmPassword.message}</ValidationMessage>
+          </FormGroup>
 
-          <Input
-            type="password"
-            name="password"
-            placeholder="비밀번호"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-          <ValidationMessage isValid={validation.password.isValid}>
-            {validation.password.message}
-          </ValidationMessage>
+          <FormGroup>
+            <Label htmlFor="phoneNumber">휴대폰 번호</Label>
+            <InputWithButton>
+              <Input id="phoneNumber" name="phoneNumber" placeholder="'-' 없이 숫자만 입력" value={formData.phoneNumber} onChange={handleChange} disabled={isPhoneVerified} required />
+              <SmallButton type="button" onClick={handleSendCode} disabled={!validation.phoneNumber.isValid || isPhoneVerified || timer > 0}>
+                {isCodeSent ? '재전송' : '인증 요청'}
+              </SmallButton>
+            </InputWithButton>
+            <ValidationMessage $isValid={validation.phoneNumber.isValid}>{validation.phoneNumber.message}</ValidationMessage>
+          </FormGroup>
 
-          <Input
-            type="password"
-            name="confirmPassword"
-            placeholder="비밀번호 확인"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
-          <ValidationMessage isValid={validation.confirmPassword.isValid}>
-            {validation.confirmPassword.message}
-          </ValidationMessage>
-
-          <Button type="submit" disabled={loading}>
+          {isCodeSent && !isPhoneVerified && (
+            <FormGroup>
+              <Label htmlFor="verificationCode">인증번호</Label>
+              <InputWithButton>
+                <Input id="verificationCode" name="verificationCode" placeholder="6자리 숫자" value={formData.verificationCode} onChange={handleChange} required />
+                <SmallButton type="button" onClick={handleVerifyCode}>인증 확인</SmallButton>
+              </InputWithButton>
+              {timer > 0 && <TimerText>남은 시간: {formatTime(timer)}</TimerText>}
+            </FormGroup>
+          )}
+          
+          <ApiErrorMessage>{apiError}</ApiErrorMessage>
+          
+          <SubmitButton type="submit" disabled={!isAllFieldsValid || !isPhoneVerified || loading}>
             {loading ? '가입 중...' : '회원가입'}
-          </Button>
-          {error && <div style={{ color: 'red' }}>{error}</div>}
+          </SubmitButton>
         </Form>
-        <Links>
-          이미 계정이 있으신가요? <Link to="/auth/login">로그인</Link>
-        </Links>
+        <Links>이미 계정이 있으신가요? <Link to="/auth/login">로그인</Link></Links>
       </FormContainer>
     </Container>
   );

@@ -30,13 +30,13 @@ const CarouselContainer = styled.div`
   overflow: hidden;
 `;
 
-const CarouselSlide = styled.div<{ active: boolean }>`
+const CarouselSlide = styled.div<{ $active: boolean }>`
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: ${props => props.active ? 1 : 0};
+  opacity: ${props => props.$active ? 1 : 0};
   transition: opacity 0.5s ease-in-out;
   background-size: cover;
   background-position: center;
@@ -90,12 +90,12 @@ const CarouselDots = styled.div`
   z-index: 2;
 `;
 
-const Dot = styled.button<{ active: boolean }>`
+const Dot = styled.button<{ $active: boolean }>`
   width: 12px;
   height: 12px;
   border-radius: 50%;
   border: 2px solid white;
-  background: ${props => props.active ? 'white' : 'transparent'};
+  background: ${props => props.$active ? 'white' : 'transparent'};
   cursor: pointer;
   transition: all 0.3s ease;
   padding: 0;
@@ -193,7 +193,7 @@ const HomePage: React.FC = () => {
           {slides.map((slide, index) => (
             <CarouselSlide
               key={index}
-              active={index === currentSlide}
+              $active={index === currentSlide}
               style={{ backgroundImage: `url(${slide.image})` }}
             >
               <CarouselContent>
@@ -206,7 +206,7 @@ const HomePage: React.FC = () => {
             {slides.map((_, index) => (
               <Dot
                 key={index}
-                active={index === currentSlide}
+                $active={index === currentSlide}
                 onClick={() => setCurrentSlide(index)}
               />
             ))}

@@ -27,5 +27,5 @@ export interface UserRegistration {
   loginId: string;
   password: string;
   nickname: string;
-  email: string;
+  phoneNumber: string;
 }
